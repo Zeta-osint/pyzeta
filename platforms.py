@@ -6,7 +6,7 @@ platforms_username = {
     # "LinkedIn": "https://linkedin.com/in/{username}",
     # "Reddit": "https://reddit.com/u/{username}",
     # "Twitch": "https://twitch.tv/{username}",
-    # "YouTube": "https://youtube.com/{username}",
+    # "YouTube": "https://youtube.com/@{username}",
     # "Snapchat": "https://snapchat.com/add/{username}",
     # "Pinterest": "https://pinterest.com/{username}",
     # "Tumblr": "https://tumblr.com/{username}",
