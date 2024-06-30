@@ -121,5 +121,6 @@ platforms_email = {
 
 platforms_api = {
     "Github": "https://github.com/search",
-    "Mastodon": "https://mastodon.social/api/v2/search"
+    "Mastodon": "https://mastodon.social/api/v2/search",
+    "Discord": "https://discords.com/api-v2/bio/search"
 }

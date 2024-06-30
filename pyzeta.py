@@ -99,6 +99,8 @@ def check_email(platforms_email, email):
     return results
 
 def github_api_driver(URL, user_input, output_file):
+    print(":: Searching on Github ...")
+
     output_file = "github-" + output_file # add prefix to file name
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"}
     user_input.replace(" ", "+")
@@ -113,7 +115,7 @@ def github_api_driver(URL, user_input, output_file):
 
     print(f"Page count: {page_count}")
     print(f"Result count: {result_count}")
-    output_file = open(output_file, "w") # BUG: close files
+    output_file = open(output_file, "w")
     csv_writer = csv.writer(output_file)
 
     for page in range(1, page_count+1):
@@ -126,7 +128,6 @@ def github_api_driver(URL, user_input, output_file):
         else:
             text_json = json.loads(r.text)
             text_json = text_json["payload"]["results"] # Extract profiles data
-            result_json.append(r.json())
 
             # Write data in csv file
             write_csv(text_json, csv_writer)
@@ -143,6 +144,7 @@ def mastodon_api_driver(URL, user_input, output_file):
         print("Error: Mastodon API token not found!\nSee manual for adding token.") # TODO add in help section
         exit()
 
+    print(":: Searching on Mastodon ...")
     print("Mastodon API Token found!")
 
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36",
@@ -154,7 +156,6 @@ def mastodon_api_driver(URL, user_input, output_file):
     print(r.url)
     text = r.text
     text_json = json.loads(text) # convert to json object
-    profile = text_json["accounts"]
 
     output_file = open(output_file, "w")
     csv_writer = csv.writer(output_file)
@@ -165,6 +166,39 @@ def mastodon_api_driver(URL, user_input, output_file):
 
     # Write to file
     write_csv(text_json, csv_writer)
+    output_file.close()
+
+def discord_api_driver(URL, user_input, output_file):
+    print(":: Searching on Discord ...")
+    output_file = "discord-" + output_file # add prefix to file name
+    parameters = f"term={user_input}"
+    user_input.replace(" ", "+")
+
+    r = requests.get(URL, params=parameters)
+    print(r.url)
+    text = r.text
+    text_json = json.loads(text) # convert to json object
+    page_count = text_json["pages"] # Get page count
+    print(f"Page count: {page_count}")
+
+    output_file = open(output_file, "w")
+    csv_writer = csv.writer(output_file)
+
+    for page in range(1, page_count+1):
+        r = requests.get(URL, parameters)
+        if r.status_code == 429: # Rate limit logic
+            print("Discord API rate limited Reached !! ... retrying in 60 seconds")
+            page = page - 2
+            time.sleep(40)
+            print("resuming :)")
+        else:
+            text_json = json.loads(r.text)
+            text_json = text_json["users"] # Extract users data
+            print(text_json)
+            # Write data in csv file
+            write_csv(text_json, csv_writer)
+            time.sleep(2)
+
     output_file.close()
 
 def write_file(results ,output_file):
@@ -190,9 +224,10 @@ def main():
 
     if (hasattr(args, "profile") and args.profile):
         if  hasattr(args, "save_output") and args.save_output:
-            print("Searching profile")
+            print("\o/:: Searching profile")
             github_api_driver(platforms_api["Github"], args.profile, args.save_output)
             mastodon_api_driver(platforms_api["Mastodon"], args.profile, args.save_output)
+            discord_api_driver(platforms_api["Discord"], args.profile, args.save_output)
         else:
             print("Error: profile search can only be used with -o")
             exit()
