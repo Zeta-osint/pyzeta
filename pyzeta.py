@@ -10,12 +10,11 @@ from requests_futures.sessions import FuturesSession
 from platforms import platforms_username, platforms_email, platforms_api
 
 def print_banner():
-    print("#############################################")
-    print("#                                           #")
-    print("#                ZETA OSINT                 #")
-    print("#                                           #")
-    print("#############################################")
-    print("\n")
+    print("""
+░▀▀█░█▀▀░▀█▀░█▀█░░░█▀█░█▀▀░▀█▀░█▀█░▀█▀
+░▄▀░░█▀▀░░█░░█▀█░░░█░█░▀▀█░░█░░█░█░░█░
+░▀▀▀░▀▀▀░░▀░░▀░▀░░░▀▀▀░▀▀▀░▀▀▀░▀░▀░░▀░
+        """)
 
 def parser_init() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="ZETA OSINT is simple open source intelligence tool written in Python")
