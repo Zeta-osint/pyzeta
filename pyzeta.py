@@ -88,9 +88,6 @@ def check_email(platforms_email, email):
                     results[platform] = None
                     print(f"[-] {platform}: {platforms_email[platform].format(email=email)} - Status code: {response.status_code if response else "Unknown error"}")
             except Exception as e:
-                elapsed_time = time.time() - start_time
-                total_time += elapsed_time
-
                 results[platform] = None
                 print(f"[-] {platform}: {platforms_email[platform].format(email=email)} - Exception: {str(e)}")
 
