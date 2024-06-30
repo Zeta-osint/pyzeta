@@ -9,11 +9,25 @@ from requests_futures.sessions import FuturesSession
 
 from platforms import platforms_username, platforms_email, platforms_api
 
-class CustomArgumentParser(argparse.ArgumentParser):
-    def format_help(self):
-        help_msg = super().format_help()
-        help_msg = help_msg.replace('optional arguments:', 'Arguments:')
-        return help_msg
+def print_banner():
+    print("#############################################")
+    print("#                                           #")
+    print("#                ZETA OSINT                 #")
+    print("#                                           #")
+    print("#############################################")
+    print("\n")
+
+def parser_init() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="ZETA OSINT is simple open source intelligence tool written in Python")
+    parser.add_argument('-v', '--version', action='version', version='ZETA-OSINT 1.0')
+    parser.add_argument('-u', '--username', help='Input username')
+    parser.add_argument('-e', '--email', help='Input email address')
+    parser.add_argument('-o', '--output', dest="save_output", metavar='FILE', help='Save results to a file')
+    parser.add_argument('-p', '--profile', dest="profile",metavar="NAME" , help="Search related profiles - API key may required!")
+    parser.add_argument('-lpp','--list-profile-platforms', action="store_true", dest="list_profile_platforms", help='Display list of supported for profiles platforms')
+    parser.add_argument('-l','--list-platforms', action="store_true", dest="list_platforms", help='Display list of platforms')
+    return parser
+
 
 def fetch_status(session, platform, url, headers):
     try:
@@ -169,23 +183,9 @@ def write_file(results ,output_file): # BUG: close files
         print(f"Results saved to {output_file}")
 
 def main():
-    # Print the banner
-    print("#############################################")
-    print("#                                           #")
-    print("#                ZETA OSINT                 #")
-    print("#                                           #")
-    print("#############################################")
-    print("\n")
-
-    parser = CustomArgumentParser(description="Usage", argument_default=argparse.SUPPRESS)
-    parser.add_argument('-v', '--version', action='version', version='ZETA-OSINT 1.0')
-    parser.add_argument('-u', '--username', help='Input username')
-    parser.add_argument('-e', '--email', help='Input email address')
-    parser.add_argument('-o', '--output', dest="save_output", metavar='FILE', help='Save results to a file')
-    parser.add_argument('-p', '--profile', dest="profile",metavar="NAME" , help="Search related profiles - API key may required!")
-    parser.add_argument('-lpp','--list-profile-platforms', action="store_true", dest="list_profile_platforms", help='Display list of supported for profiles platforms')
+    print_banner()
+    parser = parser_init()
     args = parser.parse_args()
-
 
     if (hasattr(args, "profile") and args.profile):
         if  hasattr(args, "save_output") and args.save_output:
@@ -198,24 +198,22 @@ def main():
     elif hasattr(args, "list_profile_platforms") and args.list_profile_platforms:
         for platform_name in platforms_api.keys():
             print(platform_name)
+    elif hasattr(args, "list_platforms") and args.list_platforms:
+        for platform_name in platforms_username.keys():
+            print(platform_name)
     elif hasattr(args, "username") and args.username:
         identifier = args.username.strip().lower().replace(" ", "-")
         results = check_username(platforms_username, identifier)
-
         if hasattr(args, 'save_output') and args.save_output:
             write_file(results ,args.save_output)
-
     elif hasattr(args, "email") and args.email:
         identifier = args.email.strip().lower()
         results = check_email(platforms_email, identifier)
-
         if hasattr(args, 'save_output') and args.save_output:
             write_file(results, args.save_output)
-
     else:
         print("Error: You must provide either a username or an email address.")
-        return
-
+        exit()
 
 if __name__ == "__main__":
     main()
