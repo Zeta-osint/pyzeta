@@ -105,7 +105,7 @@ def main():
     parser.add_argument('-v', '--version', action='version', version='ZETA-OSINT 1.0')
     parser.add_argument('-u', '--username', help='Input username')
     parser.add_argument('-e', '--email', help='Input email address')
-    parser.add_argument('-s', '--save-output', metavar='FILE', help='Save results to a file')
+    parser.add_argument('-o', '--output', dest="save_output", metavar='FILE', help='Save results to a file')
     args = parser.parse_args()
 
     if hasattr(args, 'username') and args.username:
