@@ -134,17 +134,8 @@ def github_api_driver(URL, user_input, output_file):
 
     output_file.close()
 
-def write_csv(text_json, csv_writer):
-    count = 0
-    for profile in text_json:
-        if count == 0: # write headers
-            header = profile.keys()
-            csv_writer.writerow(header)
-            count += 1
-
-        csv_writer.writerow(profile.values())
-
 def mastodon_api_driver(URL, user_input, output_file):
+
     output_file = "mastodon-" + output_file
     MASTODON_API = os.environ.get("MASTODON_API")
 
@@ -181,6 +172,16 @@ def write_file(results ,output_file):
         for platform, result in results.items():
             f.write(f"{platform}: {result}\n")
     print(f"Results saved to {output_file}")
+
+def write_csv(text_json, csv_writer):
+    count = 0
+    for profile in text_json:
+        if count == 0: # write headers
+            header = profile.keys()
+            csv_writer.writerow(header)
+            count += 1
+
+        csv_writer.writerow(profile.values())
 
 def main():
     print_banner()
