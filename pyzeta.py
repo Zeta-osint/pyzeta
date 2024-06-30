@@ -99,6 +99,7 @@ def check_email(platforms_email, email):
     return results
 
 def github_api_driver(URL, user_input, output_file):
+    output_file = "github-" + output_file # add prefix to file name
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'}
     user_input.replace(" ", "+")
 
@@ -138,6 +139,7 @@ def github_api_driver(URL, user_input, output_file):
             time.sleep(2)
 
 def mastodon_api_driver(URL, user_input, output_file):
+    output_file = "mastodon-" + output_file
     MASTODON_API = os.environ.get('MASTODON_API')
 
     if not MASTODON_API:
@@ -148,10 +150,11 @@ def mastodon_api_driver(URL, user_input, output_file):
 
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36',
                         'Authorization': f'Bearer {MASTODON_API}'}
+    parameters = f"q={user_input}&type=accounts"
     user_input = user_input.replace(" ", "+")
 
 
-    r = requests.get(URL, f"q={username_input}&type=accounts", headers=headers)
+    r = requests.get(URL, parameters, headers=headers)
     print(r.url)
     text = r.text
     text_json = json.loads(text) # convert to json object
@@ -160,7 +163,7 @@ def mastodon_api_driver(URL, user_input, output_file):
     output_file = open(output_file, "w") # BUG: close files
     csv_writer = csv.writer(output_file)
 
-    r = request.get(URL, f"q={username_input}&type=accounts", headers=headers)
+    r = requests.get(URL, parameters, headers=headers)
     text_json = json.loads(r.text)
     text_json = text_json["accounts"]
 
