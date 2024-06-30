@@ -23,7 +23,6 @@ def check_username(platforms_username, username):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     }
-    total_time = 0
 
     with FuturesSession(executor=ThreadPoolExecutor(max_workers=10)) as session:
         futures = {
@@ -33,12 +32,8 @@ def check_username(platforms_username, username):
 
         for future in as_completed(futures):
             platform, url = futures[future]
-            start_time = time.time()
             try:
                 response = future.result()
-                elapsed_time = time.time() - start_time
-                total_time += elapsed_time
-
                 if response and response.status_code == 200:
                     results[platform] = response.url + " " + "[Status code:" + str(response.status_code) + "]"
                     print(f"[+] {platform}: {response.url} - Status code: {response.status_code}")
@@ -46,21 +41,18 @@ def check_username(platforms_username, username):
                     results[platform] = None
                     print(f"[-] {platform}: {url.format(username=username)} - Status code: {response.status_code if response else 'Unknown error'}")
             except Exception as e:
-                elapsed_time = time.time() - start_time
-                total_time += elapsed_time
                 results[platform] = None
                 print(f"[-] {platform}: {url.format(username=username)} - Exception: {str(e)}")
 
             print(f"Checked {platform} -> Status: {results[platform]}\n")
 
-    return results, total_time
+    return results
 
 def check_email(platforms_email, email):
     results = {}
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     }
-    total_time = 0
 
     with FuturesSession(executor=ThreadPoolExecutor(max_workers=10)) as session:
         futures = {
@@ -70,12 +62,8 @@ def check_email(platforms_email, email):
 
         for future in as_completed(futures):
             platform = futures[future]
-            start_time = time.time()
             try:
                 response = future.result()
-                elapsed_time = time.time() - start_time
-                total_time += elapsed_time
-
                 if response and response.status_code == 200:
                     results[platform] = response.url + " " + "[Status code:" + str(response.status_code) + "]"
                     print(f"[+] {platform}: {response.url} - Status code: {response.status_code}")
