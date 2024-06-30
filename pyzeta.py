@@ -18,13 +18,13 @@ def print_banner():
 
 def parser_init() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="ZETA OSINT is simple open source intelligence tool written in Python")
-    parser.add_argument('-v', '--version', action='version', version='ZETA-OSINT 1.0')
-    parser.add_argument('-u', '--username', help='Input username')
-    parser.add_argument('-e', '--email', help='Input email address')
-    parser.add_argument('-o', '--output', dest="save_output", metavar='FILE', help='Save results to a file')
-    parser.add_argument('-p', '--profile', dest="profile",metavar="NAME" , help="Search related profiles - API key may required!")
-    parser.add_argument('-lpp','--list-profile-platforms', action="store_true", dest="list_profile_platforms", help='Display list of supported for profiles platforms')
-    parser.add_argument('-l','--list-platforms', action="store_true", dest="list_platforms", help='Display list of platforms')
+    parser.add_argument("-v", "--version", action="version", version="ZETA-OSINT 1.0")
+    parser.add_argument("-u", "--username", help="Input username")
+    parser.add_argument("-e", "--email", help="Input email address")
+    parser.add_argument("-o", "--output", dest="save_output", metavar="FILE", help="Save results to a file")
+    parser.add_argument("-p", "--profile", dest="profile",metavar="NAME" , help="Search related profiles - API key may required!")
+    parser.add_argument("-lpp","--list-profile-platforms", action="store_true", dest="list_profile_platforms", help="Display list of supported for profiles platforms")
+    parser.add_argument("-l","--list-platforms", action="store_true", dest="list_platforms", help="Display list of platforms")
     return parser
 
 
@@ -56,7 +56,7 @@ def check_username(platforms_username, username):
                     print(f"[+] {platform}: {response.url} - Status code: {response.status_code}")
                 else:
                     results[platform] = None
-                    print(f"[-] {platform}: {url.format(username=username)} - Status code: {response.status_code if response else 'Unknown error'}")
+                    print(f"[-] {platform}: {url.format(username=username)} - Status code: {response.status_code if response else "Unknown error"}")
             except Exception as e:
                 results[platform] = None
                 print(f"[-] {platform}: {url.format(username=username)} - Exception: {str(e)}")
@@ -86,7 +86,7 @@ def check_email(platforms_email, email):
                     print(f"[+] {platform}: {response.url} - Status code: {response.status_code}")
                 else:
                     results[platform] = None
-                    print(f"[-] {platform}: {platforms_email[platform].format(email=email)} - Status code: {response.status_code if response else 'Unknown error'}")
+                    print(f"[-] {platform}: {platforms_email[platform].format(email=email)} - Status code: {response.status_code if response else "Unknown error"}")
             except Exception as e:
                 elapsed_time = time.time() - start_time
                 total_time += elapsed_time
@@ -100,7 +100,7 @@ def check_email(platforms_email, email):
 
 def github_api_driver(URL, user_input, output_file):
     output_file = "github-" + output_file # add prefix to file name
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'}
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"}
     user_input.replace(" ", "+")
 
     r = requests.get(URL, f"q={user_input}&type=users", headers=headers)
@@ -140,7 +140,7 @@ def github_api_driver(URL, user_input, output_file):
 
 def mastodon_api_driver(URL, user_input, output_file):
     output_file = "mastodon-" + output_file
-    MASTODON_API = os.environ.get('MASTODON_API')
+    MASTODON_API = os.environ.get("MASTODON_API")
 
     if not MASTODON_API:
         print("Error: Mastodon API token not found!\nSee manual for adding token.") # TODO add in help section
@@ -148,8 +148,8 @@ def mastodon_api_driver(URL, user_input, output_file):
 
     print("Mastodon API Token found!")
 
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36',
-                        'Authorization': f'Bearer {MASTODON_API}'}
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36",
+                        "Authorization": f"Bearer {MASTODON_API}"}
     parameters = f"q={user_input}&type=accounts"
     user_input = user_input.replace(" ", "+")
 
@@ -179,7 +179,7 @@ def mastodon_api_driver(URL, user_input, output_file):
 
 
 def write_file(results ,output_file): # BUG: close files
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             for platform, result in results.items():
                 f.write(f"{platform}: {result}\n")
         print(f"Results saved to {output_file}")
@@ -206,12 +206,12 @@ def main():
     elif hasattr(args, "username") and args.username:
         identifier = args.username.strip().lower().replace(" ", "-")
         results = check_username(platforms_username, identifier)
-        if hasattr(args, 'save_output') and args.save_output:
+        if hasattr(args, "save_output") and args.save_output:
             write_file(results ,args.save_output)
     elif hasattr(args, "email") and args.email:
         identifier = args.email.strip().lower()
         results = check_email(platforms_email, identifier)
-        if hasattr(args, 'save_output') and args.save_output:
+        if hasattr(args, "save_output") and args.save_output:
             write_file(results, args.save_output)
     else:
         print("Error: You must provide either a username or an email address.")
