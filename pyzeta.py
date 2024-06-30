@@ -125,18 +125,24 @@ def github_api_driver(URL, user_input, output_file):
             print("resuming :)")
         else:
             text_json = json.loads(r.text)
-            text_json = text_json["payload"]["results"]
-            count = 0
+            text_json = text_json["payload"]["results"] # Extract profiles data
+            result_json.append(r.json())
 
             # Write data in csv file
-            # FIXME: use single write function
-            for profile in text_json:
-                if count == 0: # write headers
-                    header = profile.keys()
-                    csv_writer.writerow(header)
-                    count += 1
-                csv_writer.writerow(profile.values())
+            write_csv(text_json, csv_writer)
             time.sleep(2)
+
+    output_file.close()
+
+def write_csv(text_json, csv_writer):
+    count = 0
+    for profile in text_json:
+        if count == 0: # write headers
+            header = profile.keys()
+            csv_writer.writerow(header)
+            count += 1
+
+        csv_writer.writerow(profile.values())
 
 def mastodon_api_driver(URL, user_input, output_file):
     output_file = "mastodon-" + output_file
@@ -153,36 +159,28 @@ def mastodon_api_driver(URL, user_input, output_file):
     parameters = f"q={user_input}&type=accounts"
     user_input = user_input.replace(" ", "+")
 
-
     r = requests.get(URL, parameters, headers=headers)
     print(r.url)
     text = r.text
     text_json = json.loads(text) # convert to json object
     profile = text_json["accounts"]
 
-    output_file = open(output_file, "w") # BUG: close files
+    output_file = open(output_file, "w")
     csv_writer = csv.writer(output_file)
 
     r = requests.get(URL, parameters, headers=headers)
     text_json = json.loads(r.text)
-    text_json = text_json["accounts"]
+    text_json = text_json["accounts"] # extract accounts data
 
-    count = 0
-    # Write data in csv file
-    # FIXME: use single write function
-    for profile in text_json:
-            if count == 0: # write headers
-                    header = profile.keys()
-                    csv_writer.writerow(header)
-                    count += 1
-            csv_writer.writerow(profile.values())
+    # Write to file
+    write_csv(text_json, csv_writer)
+    output_file.close()
 
-
-def write_file(results ,output_file): # BUG: close files
-        with open(output_file, "w") as f:
-            for platform, result in results.items():
-                f.write(f"{platform}: {result}\n")
-        print(f"Results saved to {output_file}")
+def write_file(results ,output_file):
+    with open(output_file, "w") as f:
+        for platform, result in results.items():
+            f.write(f"{platform}: {result}\n")
+    print(f"Results saved to {output_file}")
 
 def main():
     print_banner()
