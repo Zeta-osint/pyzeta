@@ -118,3 +118,8 @@ platforms_email = {
     "pinterest": "https://www.pinterest.com/password/reset/?email={email}",
     "reddit": "https://www.reddit.com/password/?email={email}",
 }
+
+platforms_api = {
+    "Github": "https://github.com/search",
+    "Mastodon": "https://mastodon.social/api/v2/search"
+}
