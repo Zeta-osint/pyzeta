@@ -1,9 +1,13 @@
+import requests
 import argparse
+import json
 import time
+import csv
+import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from requests_futures.sessions import FuturesSession
-import requests
-from platforms import platforms_username, platforms_email
+
+from platforms import platforms_username, platforms_email, platforms_api
 
 class CustomArgumentParser(argparse.ArgumentParser):
     def format_help(self):
@@ -73,18 +77,102 @@ def check_email(platforms_email, email):
             except Exception as e:
                 elapsed_time = time.time() - start_time
                 total_time += elapsed_time
+
                 results[platform] = None
                 print(f"[-] {platform}: {platforms_email[platform].format(email=email)} - Exception: {str(e)}")
 
             print(f"Checked {platform} -> Status: {results[platform]}\n")
 
-    return results, total_time
+    return results
+
+def github_api_driver(URL, user_input, output_file):
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'}
+    user_input.replace(" ", "+")
+
+    r = requests.get(URL, f"q={user_input}&type=users", headers=headers)
+    print(r.url)
+    text = r.text
+    text_json = json.loads(text) # convert to json object
+    page_count = text_json["payload"]["page_count"] # Get page count
+    result_count = text_json["payload"]["result_count"] # Get result count
+    profile = text_json["payload"]["results"]
+
+    print(f"Page count: {page_count}")
+    print(f"Result count: {result_count}")
+    output_file = open(output_file, "w") # BUG: close files
+    csv_writer = csv.writer(output_file)
+
+    for page in range(1, page_count+1):
+        r = requests.get(URL, f"q={user_input}&type=users&p={page}", headers=headers)
+        if r.status_code == 429:
+            print("Github API rate limited Reached !! ... retrying in 60 seconds")
+            page = page - 2
+            time.sleep(40)
+            print("resuming :)")
+        else:
+            text_json = json.loads(r.text)
+            text_json = text_json["payload"]["results"]
+            count = 0
+
+            # Write data in csv file
+            # FIXME: use single write function
+            for profile in text_json:
+                if count == 0: # write headers
+                    header = profile.keys()
+                    csv_writer.writerow(header)
+                    count += 1
+                csv_writer.writerow(profile.values())
+            time.sleep(2)
+
+def mastodon_api_driver(URL, user_input, output_file):
+    MASTODON_API = os.environ.get('MASTODON_API')
+
+    if not MASTODON_API:
+        print("Error: Mastodon API token not found!\nSee manual for adding token.") # TODO add in help section
+        exit()
+
+    print("Mastodon API Token found!")
+
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36',
+                        'Authorization': f'Bearer {MASTODON_API}'}
+    user_input = user_input.replace(" ", "+")
+
+
+    r = requests.get(URL, f"q={username_input}&type=accounts", headers=headers)
+    print(r.url)
+    text = r.text
+    text_json = json.loads(text) # convert to json object
+    profile = text_json["accounts"]
+
+    output_file = open(output_file, "w") # BUG: close files
+    csv_writer = csv.writer(output_file)
+
+    r = request.get(URL, f"q={username_input}&type=accounts", headers=headers)
+    text_json = json.loads(r.text)
+    text_json = text_json["accounts"]
+
+    count = 0
+    # Write data in csv file
+    # FIXME: use single write function
+    for profile in text_json:
+            if count == 0: # write headers
+                    header = profile.keys()
+                    csv_writer.writerow(header)
+                    count += 1
+            csv_writer.writerow(profile.values())
+
+
+def write_file(results ,output_file): # BUG: close files
+        with open(output_file, 'w') as f:
+            for platform, result in results.items():
+                f.write(f"{platform}: {result}\n")
+        print(f"Results saved to {output_file}")
 
 def main():
     # Print the banner
     print("#############################################")
     print("#                                           #")
-    print("#             ZETA OSINT                    #")
+    print("#                ZETA OSINT                 #")
     print("#                                           #")
     print("#############################################")
     print("\n")
@@ -94,25 +182,40 @@ def main():
     parser.add_argument('-u', '--username', help='Input username')
     parser.add_argument('-e', '--email', help='Input email address')
     parser.add_argument('-o', '--output', dest="save_output", metavar='FILE', help='Save results to a file')
+    parser.add_argument('-p', '--profile', dest="profile",metavar="NAME" , help="Search related profiles - API key may required!")
+    parser.add_argument('-lpp','--list-profile-platforms', action="store_true", dest="list_profile_platforms", help='Display list of supported for profiles platforms')
     args = parser.parse_args()
 
-    if hasattr(args, 'username') and args.username:
+
+    if (hasattr(args, "profile") and args.profile):
+        if  hasattr(args, "save_output") and args.save_output:
+            print("Searching profile")
+            github_api_driver(platforms_api["Github"], args.profile, args.save_output)
+            mastodon_api_driver(platforms_api["Mastodon"], args.profile, args.save_output)
+        else:
+            print("Error: profile search can only be used with -o")
+            exit()
+    elif hasattr(args, "list_profile_platforms") and args.list_profile_platforms:
+        for platform_name in platforms_api.keys():
+            print(platform_name)
+    elif hasattr(args, "username") and args.username:
         identifier = args.username.strip().lower().replace(" ", "-")
-        results, total_time = check_username(platforms_username, identifier)
-    elif hasattr(args, 'email') and args.email:
+        results = check_username(platforms_username, identifier)
+
+        if hasattr(args, 'save_output') and args.save_output:
+            write_file(results ,args.save_output)
+
+    elif hasattr(args, "email") and args.email:
         identifier = args.email.strip().lower()
-        results, total_time = check_email(platforms_email, identifier)
+        results = check_email(platforms_email, identifier)
+
+        if hasattr(args, 'save_output') and args.save_output:
+            write_file(results, args.save_output)
+
     else:
         print("Error: You must provide either a username or an email address.")
         return
 
-    print(f"\nEstimated total time: {total_time:.2f} seconds")
-
-    if hasattr(args, 'save_output') and args.save_output:
-        with open(args.save_output, 'w') as f:
-            for platform, result in results.items():
-                f.write(f"{platform}: {result}\n")
-        print(f"Results saved to {args.save_output}")
 
 if __name__ == "__main__":
     main()
