@@ -95,108 +95,89 @@ def check_email(platforms_email, email):
 
     return results
 
-def github_api_driver(URL, user_input, output_file):
+def github_api_driver(URL, user_input) -> []:
     print(":: Searching on Github ...")
 
-    output_file = "github-" + output_file # add prefix to file name
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"}
     user_input.replace(" ", "+")
 
-    r = requests.get(URL, f"q={user_input}&type=users", headers=headers)
-    print(r.url)
-    text = r.text
-    text_json = json.loads(text) # convert to json object
+    response = requests.get(URL, f"q={user_input}&type=users", headers=headers)
+    print(response.url)
+    response_text = response.text
+    text_json = json.loads(response_text) # convert to json object
     page_count = text_json["payload"]["page_count"] # Get page count
-    result_count = text_json["payload"]["result_count"] # Get result count
-    profile = text_json["payload"]["results"]
+    profile_count = text_json["payload"]["result_count"] # Get result count
 
     print(f"Page count: {page_count}")
-    print(f"Result count: {result_count}")
-    output_file = open(output_file, "w")
-    csv_writer = csv.writer(output_file)
+    print(f"Result count: {profile_count}")
+
+    result = []
 
     for page in range(1, page_count+1):
-        r = requests.get(URL, f"q={user_input}&type=users&p={page}", headers=headers)
-        if r.status_code == 429:
+        response = requests.get(URL, f"q={user_input}&type=users&p={page}", headers=headers)
+        if response.status_code == 429:
             print("Github API rate limited Reached !! ... retrying in 60 seconds")
             page = page - 2
             time.sleep(40)
             print("resuming :)")
         else:
-            text_json = json.loads(r.text)
-            text_json = text_json["payload"]["results"] # Extract profiles data
-
-            # Write data in csv file
-            write_csv(text_json, csv_writer)
+            text_json = json.loads(response.text)
+            users = text_json["payload"]["results"] # Extract users
+            if page == 1:
+                result = users
+            else:
+                result.extend(users)
             time.sleep(2)
+    return result
 
-    output_file.close()
-
-def mastodon_api_driver(URL, user_input, output_file):
-
-    output_file = "mastodon-" + output_file
+def mastodon_api_driver(URL, user_input):
     MASTODON_API = os.environ.get("MASTODON_API")
 
     if not MASTODON_API:
         print("Error: Mastodon API token not found!\nSee manual for adding token.") # TODO add in help section
-        exit()
+        return []
 
     print(":: Searching on Mastodon ...")
     print("Mastodon API Token found!")
 
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36",
-                        "Authorization": f"Bearer {MASTODON_API}"}
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36", "Authorization": f"Bearer {MASTODON_API}"}
+
     parameters = f"q={user_input}&type=accounts"
     user_input = user_input.replace(" ", "+")
 
-    r = requests.get(URL, parameters, headers=headers)
-    print(r.url)
-    text = r.text
+    reponse = requests.get(URL, parameters, headers=headers)
+    print(reponse.url)
+    text = reponse.text
     text_json = json.loads(text) # convert to json object
+    result = text_json["accounts"]
 
-    output_file = open(output_file, "w")
-    csv_writer = csv.writer(output_file)
+    return result
 
-    r = requests.get(URL, parameters, headers=headers)
-    text_json = json.loads(r.text)
-    text_json = text_json["accounts"] # extract accounts data
-
-    # Write to file
-    write_csv(text_json, csv_writer)
-    output_file.close()
-
-def discord_api_driver(URL, user_input, output_file):
+def discord_api_driver(URL, user_input) -> []:
     print(":: Searching on Discord ...")
-    output_file = "discord-" + output_file # add prefix to file name
     parameters = f"term={user_input}"
     user_input.replace(" ", "+")
 
-    r = requests.get(URL, params=parameters)
-    print(r.url)
-    text = r.text
+    response = requests.get(URL, params=parameters)
+    print(response.url)
+    text = response.text
     text_json = json.loads(text) # convert to json object
     page_count = text_json["pages"] # Get page count
     print(f"Page count: {page_count}")
 
-    output_file = open(output_file, "w")
-    csv_writer = csv.writer(output_file)
-
+    result = []
     for page in range(1, page_count+1):
-        r = requests.get(URL, parameters)
-        if r.status_code == 429: # Rate limit logic
+        response = requests.get(URL, parameters)
+        if response.status_code == 429: # Rate limit logic
             print("Discord API rate limited Reached !! ... retrying in 60 seconds")
             page = page - 2
             time.sleep(40)
             print("resuming :)")
         else:
-            text_json = json.loads(r.text)
-            text_json = text_json["users"] # Extract users data
-            print(text_json)
-            # Write data in csv file
-            write_csv(text_json, csv_writer)
-            time.sleep(2)
-
-    output_file.close()
+            text_json = json.loads(response.text)
+            users = text_json["users"] # Extract users data
+            result.extend(users)
+    return result
 
 def write_file(results ,output_file):
     with open(output_file, "w") as f:
@@ -204,15 +185,18 @@ def write_file(results ,output_file):
             f.write(f"{platform}: {result}\n")
     print(f"Results saved to {output_file}")
 
-def write_csv(text_json, csv_writer):
+def write_csv(text_json, file_name):
+    output_file = open(file_name, "w")
+    csv_writer = csv.writer(output_file)
+
     count = 0
     for profile in text_json:
         if count == 0: # write headers
             header = profile.keys()
             csv_writer.writerow(header)
             count += 1
-
         csv_writer.writerow(profile.values())
+    output_file.close()
 
 def main():
     print_banner()
@@ -221,10 +205,13 @@ def main():
 
     if (hasattr(args, "profile") and args.profile):
         if  hasattr(args, "save_output") and args.save_output:
-            print("\o/:: Searching profile")
-            github_api_driver(platforms_api["Github"], args.profile, args.save_output)
-            mastodon_api_driver(platforms_api["Mastodon"], args.profile, args.save_output)
-            discord_api_driver(platforms_api["Discord"], args.profile, args.save_output)
+            print("\\o/:: Searching profile")
+            result_github = github_api_driver(platforms_api["Github"], args.profile)
+            write_csv(result_github, "github-" + args.save_output)
+            result_mastodon = mastodon_api_driver(platforms_api["Mastodon"], args.profile)
+            write_csv(result_mastodon, "mastodon-" + args.save_output)
+            result_discord = discord_api_driver(platforms_api["Discords"], args.profile)
+            write_csv(result_discord, "discord-" + args.save_output)
         else:
             print("Error: profile search can only be used with -o")
             exit()
