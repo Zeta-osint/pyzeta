@@ -18,8 +18,8 @@ def print_banner():
         """)
 
 def parser_init() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="ZETA OSINT is simple open source intelligence tool written in Python")
-    parser.add_argument("-v", "--version", action="version", version="ZETA-OSINT 1.0")
+    parser = argparse.ArgumentParser(description="pyZETA is simple open source intelligence tool written in Python")
+    parser.add_argument("-v", "--version", action="version", version="pyzeta 0.1")
     parser.add_argument("-u", "--username", help="Input username")
     parser.add_argument("-e", "--email", help="Input email address")
     parser.add_argument("-o", "--output", dest="save_output", metavar="FILE", help="Save results to a file")
